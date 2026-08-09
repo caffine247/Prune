@@ -502,7 +502,7 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
                                         groupUUIDToNameDict[uuid] = name
                                     }
                                 }
-                                WriteToLog.shared.message("[processItems] blueprints: built UUID→name map with \(groupUUIDToNameDict.count) groups")
+                                WriteToLog.shared.message("[processItems] blueprints: built UUID→name map with \(await groupUUIDToNameDict.count) groups")
                             }
 
                             WriteToLog.shared.message("[processItems] blueprints: fetching blueprint list...")

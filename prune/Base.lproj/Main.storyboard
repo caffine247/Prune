@@ -1447,7 +1447,7 @@ DQ
                                     <action selector="updateViewButton_Action:" target="XfG-lQ-9wD" id="ehj-MS-WUr"/>
                                 </connections>
                             </button>
-                            <button identifier="printers" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2LZ-zy-RWG">
+                            <button identifier="blueprints" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2LZ-zy-RWG">
                                 <rect key="frame" x="399" y="425" width="105" height="20"/>
                                 <buttonCell key="cell" type="check" title="Blueprints" bezelStyle="regularSquare" imagePosition="left" controlSize="large" inset="2" id="zP5-4j-6V0">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
