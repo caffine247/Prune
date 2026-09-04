@@ -180,7 +180,7 @@ class JamfPro: NSObject, URLSessionDelegate {
         switch useApiClient {
         case 1:  tokenUrlString = "\(serverUrl)/api/oauth/token"
         case 2:  tokenUrlString = "\(serverUrl)/api/v1/auth/token"
-        default: tokenUrlString = "https://\(JamfProServer.region).apigw.jamf.com/auth/token"
+        default: tokenUrlString = "https://\(JamfProServer.region).api.jamfcloud.com/auth/token"
         }
         tokenUrlString = tokenUrlString.replacingOccurrences(of: "//api", with: "/api")
         //        print("[getToken] tokenUrlString: \(tokenUrlString)")
@@ -271,7 +271,7 @@ class JamfPro: NSObject, URLSessionDelegate {
                                                 WriteToLog.shared.message("[JamfPro.getServerURL] Platform API server URL fetch failed: \(error)")
                                             }
                                             do {
-//                                                WriteToLog.shared.message("[getVersion] Attempting GET on https://\(JamfProServer.region).apigw.jamf.com/api/pro/v1/tenant/\(JamfProServer.tenantId)/jamf-pro-version.")
+//                                                WriteToLog.shared.message("[getVersion] Attempting GET on https://\(JamfProServer.region).api.jamfcloud.com/pro/v1/tenant/\(JamfProServer.tenantId)/jamf-pro-version.")
                                                 let versionString = try await PlatformAPIClient.shared.getJamfProVersion()
                                                 if !versionString.isEmpty {
                                                     WriteToLog.shared.message("[JamfPro.getVersion] Jamf Pro Version: \(versionString)")

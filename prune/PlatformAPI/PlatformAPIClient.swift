@@ -5,8 +5,8 @@
 import Foundation
 
 // Base async/await client for the Jamf Platform API.
-// Base URL: https://{region}.apigw.jamf.com/api/pro/{version}/tenant/{tenantId}/{resource}
-// Auth: Bearer token from JamfProServer.accessToken (obtained via JamfPro.shared.getToken)
+// Base URL: https://{region}.api.jamfcloud.com/pro/{version}/{resource}
+// Auth: Bearer token; tenant passed via X-Tenant-Id header.
 
 enum PlatformAPIError: Error {
     case invalidURL
@@ -21,19 +21,33 @@ struct PlatformAPIClient {
     private init() {}
 
     var baseURL: String {
-        "https://\(JamfProServer.region).apigw.jamf.com/api/pro"
+        "https://\(JamfProServer.region).api.jamfcloud.com/pro"
     }
 
     var classicBaseURL: String {
-        "https://\(JamfProServer.region).apigw.jamf.com/api/proclassic"
+        "https://\(JamfProServer.region).api.jamfcloud.com/proclassic"
     }
 
     var blueprintsBaseURL: String {
-        "https://\(JamfProServer.region).apigw.jamf.com/api/blueprints"
+        "https://\(JamfProServer.region).api.jamfcloud.com/blueprints"
     }
 
     var deviceGroupsBaseURL: String {
-        "https://\(JamfProServer.region).apigw.jamf.com/api/device-groups"
+        "https://\(JamfProServer.region).api.jamfcloud.com/device-groups"
+    }
+
+    var tenantId: String {
+        JamfProServer.tenantId
+    }
+
+    func makeRequest(url: URL, method: String = "GET") -> URLRequest {
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "accept")
+        request.setValue("Bearer \(JamfProServer.accessToken)", forHTTPHeaderField: "authorization")
+        request.setValue(tenantId, forHTTPHeaderField: "X-Tenant-Id")
+        request.setValue(AppInfo.userAgentHeader, forHTTPHeaderField: "User-Agent")
+        return request
     }
 
     // GET a paginated mobile device groups endpoint (different base URL: api/device-groups/).
@@ -45,7 +59,7 @@ struct PlatformAPIClient {
         let pageSize = 100
 
         repeat {
-            var components = URLComponents(string: "\(deviceGroupsBaseURL)/\(version)/tenant/\(tenantId)/\(resource)")!
+            var components = URLComponents(string: "\(deviceGroupsBaseURL)/\(version)/\(resource)")!
             components.queryItems = [
                 URLQueryItem(name: "page", value: "\(page)"),
                 URLQueryItem(name: "page-size", value: "\(pageSize)"),
@@ -53,12 +67,7 @@ struct PlatformAPIClient {
             ]
             guard let url = components.url else { throw PlatformAPIError.invalidURL }
 
-            var request = URLRequest(url: url)
-            request.httpMethod = "GET"
-            request.setValue("application/json", forHTTPHeaderField: "accept")
-            request.setValue("Bearer \(JamfProServer.accessToken)", forHTTPHeaderField: "authorization")
-            request.setValue(AppInfo.userAgentHeader, forHTTPHeaderField: "User-Agent")
-
+            let request = makeRequest(url: url)
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
             guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
@@ -87,7 +96,7 @@ struct PlatformAPIClient {
         let pageSize = 100
 
         repeat {
-            var components = URLComponents(string: "\(blueprintsBaseURL)/\(version)/tenant/\(tenantId)/\(resource)")!
+            var components = URLComponents(string: "\(blueprintsBaseURL)/\(version)/\(resource)")!
             components.queryItems = [
                 URLQueryItem(name: "page", value: "\(page)"),
                 URLQueryItem(name: "page-size", value: "\(pageSize)"),
@@ -95,12 +104,7 @@ struct PlatformAPIClient {
             ]
             guard let url = components.url else { throw PlatformAPIError.invalidURL }
 
-            var request = URLRequest(url: url)
-            request.httpMethod = "GET"
-            request.setValue("application/json", forHTTPHeaderField: "accept")
-            request.setValue("Bearer \(JamfProServer.accessToken)", forHTTPHeaderField: "authorization")
-            request.setValue(AppInfo.userAgentHeader, forHTTPHeaderField: "User-Agent")
-
+            let request = makeRequest(url: url)
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
             guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
@@ -124,15 +128,10 @@ struct PlatformAPIClient {
     func getBlueprint(id: String) async throws -> [String: Any] {
         try await ensureToken()
 
-        guard let url = URL(string: "\(blueprintsBaseURL)/v1/tenant/\(tenantId)/blueprints/\(id)") else {
+        guard let url = URL(string: "\(blueprintsBaseURL)/v1/blueprints/\(id)") else {
             throw PlatformAPIError.invalidURL
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "accept")
-        request.setValue("Bearer \(JamfProServer.accessToken)", forHTTPHeaderField: "authorization")
-        request.setValue(AppInfo.userAgentHeader, forHTTPHeaderField: "User-Agent")
-
+        let request = makeRequest(url: url)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
         guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
@@ -141,10 +140,6 @@ struct PlatformAPIClient {
             throw PlatformAPIError.decodingError
         }
         return json
-    }
-
-    var tenantId: String {
-        JamfProServer.tenantId
     }
 
     // Ensures a valid token exists before making a call, reusing the existing getToken logic.
@@ -172,7 +167,7 @@ struct PlatformAPIClient {
         let pageSize = 100
 
         repeat {
-            var components = URLComponents(string: "\(baseURL)/\(version)/tenant/\(tenantId)/\(resource)")!
+            var components = URLComponents(string: "\(baseURL)/\(version)/\(resource)")!
             components.queryItems = [
                 URLQueryItem(name: "page", value: "\(page)"),
                 URLQueryItem(name: "page-size", value: "\(pageSize)"),
@@ -180,12 +175,7 @@ struct PlatformAPIClient {
             ]
             guard let url = components.url else { throw PlatformAPIError.invalidURL }
 
-            var request = URLRequest(url: url)
-            request.httpMethod = "GET"
-            request.setValue("application/json", forHTTPHeaderField: "accept")
-            request.setValue("Bearer \(JamfProServer.accessToken)", forHTTPHeaderField: "authorization")
-            request.setValue(AppInfo.userAgentHeader, forHTTPHeaderField: "User-Agent")
-
+            let request = makeRequest(url: url)
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
             guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
@@ -209,15 +199,10 @@ struct PlatformAPIClient {
     func getArray(version: String, resource: String) async throws -> [[String: Any]] {
         try await ensureToken()
 
-        guard let url = URL(string: "\(baseURL)/\(version)/tenant/\(tenantId)/\(resource)") else {
+        guard let url = URL(string: "\(baseURL)/\(version)/\(resource)") else {
             throw PlatformAPIError.invalidURL
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "accept")
-        request.setValue("Bearer \(JamfProServer.accessToken)", forHTTPHeaderField: "authorization")
-        request.setValue(AppInfo.userAgentHeader, forHTTPHeaderField: "User-Agent")
-
+        let request = makeRequest(url: url)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
         guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
@@ -233,18 +218,13 @@ struct PlatformAPIClient {
         try await ensureToken()
 
         let urlString = id.isEmpty
-            ? "\(baseURL)/\(version)/tenant/\(tenantId)/\(resource)"
-            : "\(baseURL)/\(version)/tenant/\(tenantId)/\(resource)/\(id)"
+            ? "\(baseURL)/\(version)/\(resource)"
+            : "\(baseURL)/\(version)/\(resource)/\(id)"
         guard let url = URL(string: urlString) else {
             throw PlatformAPIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "accept")
-        request.setValue("Bearer \(JamfProServer.accessToken)", forHTTPHeaderField: "authorization")
-        request.setValue(AppInfo.userAgentHeader, forHTTPHeaderField: "User-Agent")
-
+        let request = makeRequest(url: url)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
         guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
@@ -259,16 +239,11 @@ struct PlatformAPIClient {
     func delete(version: String, resource: String, id: String) async throws {
         try await ensureToken()
 
-        guard let url = URL(string: "\(baseURL)/\(version)/tenant/\(tenantId)/\(resource)/\(id)") else {
+        guard let url = URL(string: "\(baseURL)/\(version)/\(resource)/\(id)") else {
             throw PlatformAPIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        request.setValue("application/json", forHTTPHeaderField: "accept")
-        request.setValue("Bearer \(JamfProServer.accessToken)", forHTTPHeaderField: "authorization")
-        request.setValue(AppInfo.userAgentHeader, forHTTPHeaderField: "User-Agent")
-
+        let request = makeRequest(url: url, method: "DELETE")
         WriteToLog.shared.message("[delete] DELETE \(url.absoluteString)")
         let (_, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }

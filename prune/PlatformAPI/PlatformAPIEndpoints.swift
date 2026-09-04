@@ -151,19 +151,15 @@ extension PlatformAPIClient {
 
     // MARK: - Classic tunnel endpoints (openapi.yaml)
     // Used for resources without a modern versioned equivalent.
-    // Path pattern: /tenant/{tenantId}/{resource} (no version prefix)
+    // Path pattern: /{resource} or /{resource}/id/{id} — tenant passed via X-Tenant-Id header
 
     private func classicGetAll(resource: String) async throws -> [[String: Any]] {
         try await ensureToken()
 
-        guard let url = URL(string: "\(classicBaseURL)/tenant/\(tenantId)/\(resource)") else {
+        guard let url = URL(string: "\(classicBaseURL)/\(resource)") else {
             throw PlatformAPIError.invalidURL
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "accept")
-        request.setValue("Bearer \(JamfProServer.accessToken)", forHTTPHeaderField: "authorization")
-        request.setValue(AppInfo.userAgentHeader, forHTTPHeaderField: "User-Agent")
+        let request = makeRequest(url: url)
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
@@ -181,14 +177,10 @@ extension PlatformAPIClient {
     private func classicGet(resource: String, id: String) async throws -> [String: Any] {
         try await ensureToken()
 
-        guard let url = URL(string: "\(classicBaseURL)/tenant/\(tenantId)/\(resource)/id/\(id)") else {
+        guard let url = URL(string: "\(classicBaseURL)/\(resource)/id/\(id)") else {
             throw PlatformAPIError.invalidURL
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "accept")
-        request.setValue("Bearer \(JamfProServer.accessToken)", forHTTPHeaderField: "authorization")
-        request.setValue(AppInfo.userAgentHeader, forHTTPHeaderField: "User-Agent")
+        let request = makeRequest(url: url)
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
@@ -203,14 +195,10 @@ extension PlatformAPIClient {
     private func classicDelete(resource: String, id: String) async throws {
         try await ensureToken()
 
-        guard let url = URL(string: "\(classicBaseURL)/tenant/\(tenantId)/\(resource)/id/\(id)") else {
+        guard let url = URL(string: "\(classicBaseURL)/\(resource)/id/\(id)") else {
             throw PlatformAPIError.invalidURL
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        request.setValue("application/json", forHTTPHeaderField: "accept")
-        request.setValue("Bearer \(JamfProServer.accessToken)", forHTTPHeaderField: "authorization")
-        request.setValue(AppInfo.userAgentHeader, forHTTPHeaderField: "User-Agent")
+        var request = makeRequest(url: url, method: "DELETE")
 
         WriteToLog.shared.message("[classicDelete] DELETE \(url.absoluteString)")
         let (_, response) = try await URLSession.shared.data(for: request)
