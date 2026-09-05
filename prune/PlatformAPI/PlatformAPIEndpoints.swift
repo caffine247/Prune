@@ -161,7 +161,7 @@ extension PlatformAPIClient {
         }
         let request = makeRequest(url: url)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request: request)
         guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
         guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
 
@@ -182,7 +182,7 @@ extension PlatformAPIClient {
         }
         let request = makeRequest(url: url)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request: request)
         guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
         guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
 
@@ -201,7 +201,7 @@ extension PlatformAPIClient {
         var request = makeRequest(url: url, method: "DELETE")
 
         WriteToLog.shared.message("[classicDelete] DELETE \(url.absoluteString)")
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (_, response) = try await fetch(request: request)
         guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
         WriteToLog.shared.message("[classicDelete] \(resource)/\(id) → HTTP \(http.statusCode)")
         guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }

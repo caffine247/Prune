@@ -13,6 +13,7 @@ enum PlatformAPIError: Error {
     case httpError(Int)
     case decodingError
     case noToken
+    case requestTimeout
 }
 
 struct PlatformAPIClient {
@@ -38,6 +39,30 @@ struct PlatformAPIClient {
 
     var tenantId: String {
         JamfProServer.tenantId
+    }
+
+    static let session: URLSession = {
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = 30
+        config.timeoutIntervalForResource = 60
+        return URLSession(configuration: config)
+    }()
+
+    // Wraps session.data(for:) with a hard application-level timeout using Swift task cancellation.
+    // This is a belt-and-suspenders guard: URLSession timeouts can silently fail to fire
+    // when the connection pool has stale connections after many requests.
+    func fetch(request: URLRequest, timeoutSeconds: Double = 25) async throws -> (Data, URLResponse) {
+        try await withThrowingTaskGroup(of: (Data, URLResponse).self) { group in
+            group.addTask {
+                try await PlatformAPIClient.session.data(for: request)
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(timeoutSeconds * 1_000_000_000))
+                throw PlatformAPIError.requestTimeout
+            }
+            defer { group.cancelAll() }
+            return try await group.next()!
+        }
     }
 
     func makeRequest(url: URL, method: String = "GET") -> URLRequest {
@@ -68,7 +93,7 @@ struct PlatformAPIClient {
             guard let url = components.url else { throw PlatformAPIError.invalidURL }
 
             let request = makeRequest(url: url)
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await fetch(request: request)
             guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
             guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
 
@@ -105,7 +130,7 @@ struct PlatformAPIClient {
             guard let url = components.url else { throw PlatformAPIError.invalidURL }
 
             let request = makeRequest(url: url)
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await fetch(request: request)
             guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
             guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
 
@@ -132,7 +157,7 @@ struct PlatformAPIClient {
             throw PlatformAPIError.invalidURL
         }
         let request = makeRequest(url: url)
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request: request)
         guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
         guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
 
@@ -176,7 +201,7 @@ struct PlatformAPIClient {
             guard let url = components.url else { throw PlatformAPIError.invalidURL }
 
             let request = makeRequest(url: url)
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await fetch(request: request)
             guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
             guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
 
@@ -203,7 +228,7 @@ struct PlatformAPIClient {
             throw PlatformAPIError.invalidURL
         }
         let request = makeRequest(url: url)
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request: request)
         guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
         guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
 
@@ -225,7 +250,7 @@ struct PlatformAPIClient {
         }
 
         let request = makeRequest(url: url)
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request: request)
         guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
         guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }
 
@@ -245,7 +270,7 @@ struct PlatformAPIClient {
 
         let request = makeRequest(url: url, method: "DELETE")
         WriteToLog.shared.message("[delete] DELETE \(url.absoluteString)")
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (_, response) = try await fetch(request: request)
         guard let http = response as? HTTPURLResponse else { throw PlatformAPIError.decodingError }
         WriteToLog.shared.message("[delete] \(resource)/\(id) → HTTP \(http.statusCode)")
         guard httpSuccess.contains(http.statusCode) else { throw PlatformAPIError.httpError(http.statusCode) }

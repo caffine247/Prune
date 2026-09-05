@@ -23,6 +23,11 @@ class Json: NSObject, URLSessionDelegate {
             (result: (Int,String)) in
             let (statusCode, theResult) = result
 //            print("[getRecord] token check")
+            guard theResult == "success" else {
+                WriteToLog.shared.message("[Json.getRecord] token unavailable (status \(statusCode)) for \(theEndpoint) — skipping")
+                completion([:])
+                return
+            }
             if theResult == "success" {
                 
             

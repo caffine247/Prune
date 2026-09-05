@@ -7,6 +7,10 @@ import Cocoa
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
     @IBAction func QuitNow(sender: AnyObject) {
+        if useApiClient == 0 {
+            NSApplication.shared.terminate(self)
+            return
+        }
         JamfPro.shared.jpapiAction(serverUrl: JamfProServer.source, endpoint: "auth/invalidate-token", apiData: [:], id: "", token: JamfProServer.accessToken , method: "POST") {
             (returnedJSON: [String:Any]) in
             WriteToLog.shared.message("quitting: \(returnedJSON["JPAPI_result"], default: "unknown error terminating token")")

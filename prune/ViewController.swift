@@ -110,12 +110,16 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
         
         setViewButton(setOn: false)
         LoginWindow.show = true
-        JamfPro.shared.jpapiAction(serverUrl: JamfProServer.source, endpoint: "auth/invalidate-token", apiData: [:], id: "", token: JamfProServer.accessToken, method: "POST") { [self]
-            (returnedJSON: [String:Any]) in
-            WriteToLog.shared.message("logging out: \(returnedJSON["JPAPI_result"], default: "unknown error terminating token")")
-            JamfProServer.validToken = false
-            JamfProServer.version    = ""
+        JamfProServer.validToken = false
+        JamfProServer.version    = ""
+        if useApiClient == 0 {
             performSegue(withIdentifier: "loginView", sender: nil)
+        } else {
+            JamfPro.shared.jpapiAction(serverUrl: JamfProServer.source, endpoint: "auth/invalidate-token", apiData: [:], id: "", token: JamfProServer.accessToken, method: "POST") { [self]
+                (returnedJSON: [String:Any]) in
+                WriteToLog.shared.message("logging out: \(returnedJSON["JPAPI_result"], default: "unknown error terminating token")")
+                performSegue(withIdentifier: "loginView", sender: nil)
+            }
         }
     }
     
@@ -787,7 +791,7 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
                                 let ebooksArray = try await PlatformAPIClient.shared.getEbooks()
                                 if ebooksArray.isEmpty {
                                     WriteToLog.shared.message("[processItems] \(msgText) complete - call \(nextObject)")
-                                    DispatchQueue.main.async { self.processItems(type: nextObject) }
+                                    waitFor.ebook = false
                                     return
                                 }
                                 for ebook in ebooksArray {
@@ -799,7 +803,7 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
                                 self.recursiveLookup(theServer: JamfProServer.source, base64Creds: self.jamfBase64Creds, theEndpoint: type, theData: ebooksArray, index: 0)
                             } catch {
                                 WriteToLog.shared.message("[processItems] Platform API error (ebooks): \(error)")
-                                DispatchQueue.main.async { self.processItems(type: nextObject) }
+                                waitFor.ebook = false
                                 return
                             }
                         }
@@ -878,7 +882,7 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
                                 let classesArray = try await PlatformAPIClient.shared.getClasses()
                                 if classesArray.isEmpty {
                                     WriteToLog.shared.message("[processItems] \(msgText) complete - call \(nextObject)")
-                                    DispatchQueue.main.async { self.processItems(type: nextObject) }
+                                    waitFor.classes = false
                                     return
                                 }
                                 for cls in classesArray {
@@ -890,7 +894,7 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
                                 self.recursiveLookup(theServer: JamfProServer.source, base64Creds: self.jamfBase64Creds, theEndpoint: type, theData: classesArray, index: 0)
                             } catch {
                                 WriteToLog.shared.message("[processItems] Platform API error (classes): \(error)")
-                                DispatchQueue.main.async { self.processItems(type: nextObject) }
+                                waitFor.classes = false
                                 return
                             }
                         }
@@ -1159,7 +1163,7 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
                                     : try await PlatformAPIClient.shared.getMobileDeviceConfigurationProfiles()
                                 if objectsArray.isEmpty {
                                     WriteToLog.shared.message("[processItems] \(msgText) complete - \(nextObject)")
-                                    DispatchQueue.main.async { self.processItems(type: nextObject) }
+                                    waitFor.mobiledeviceobject = false
                                     return
                                 }
                                 for obj in objectsArray {
@@ -1172,7 +1176,7 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
                                 self.recursiveLookup(theServer: JamfProServer.source, base64Creds: self.jamfBase64Creds, theEndpoint: type, theData: objectsArray, index: 0)
                             } catch {
                                 WriteToLog.shared.message("[processItems] Platform API error (\(type)): \(error)")
-                                DispatchQueue.main.async { self.processItems(type: nextObject) }
+                                waitFor.mobiledeviceobject = false
                                 return
                             }
                         }
@@ -1862,7 +1866,7 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
                                }
                                if advancedcomputersearchArray.isEmpty {
                                    WriteToLog.shared.message("[processItems] no advanced computer searches - call \(nextObject)")
-                                   DispatchQueue.main.async { self.processItems(type: nextObject) }
+                                   waitFor.advancedsearch = false
                                    return
                                }
                                DispatchQueue.main.async { self.process_TextField.stringValue = "Scanning Advanced Computer Searches for groups..." }
@@ -1870,7 +1874,7 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
                                self.recursiveLookup(theServer: JamfProServer.source, base64Creds: self.jamfBase64Creds, theEndpoint: type, theData: advancedcomputersearchArray, index: 0)
                            } catch {
                                WriteToLog.shared.message("[processItems] Platform API error (advancedcomputersearches): \(error)")
-                               DispatchQueue.main.async { self.processItems(type: nextObject) }
+                               waitFor.advancedsearch = false
                                return
                            }
                        }
@@ -1980,7 +1984,7 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
                                }
                                if advancedsearchArray.isEmpty {
                                    WriteToLog.shared.message("[processItems] no advanced mobile device searches - call \(nextObject)")
-                                   DispatchQueue.main.async { self.processItems(type: nextObject) }
+                                   waitFor.advancedsearch = false
                                    return
                                }
                                DispatchQueue.main.async { self.process_TextField.stringValue = "Scanning Advanced Mobile Device Searches for groups..." }
@@ -1988,7 +1992,7 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
                                self.recursiveLookup(theServer: JamfProServer.source, base64Creds: self.jamfBase64Creds, theEndpoint: type, theData: advancedsearchArray, index: 0)
                            } catch {
                                WriteToLog.shared.message("[processItems] Platform API error (advancedmobiledevicesearches): \(error)")
-                               DispatchQueue.main.async { self.processItems(type: nextObject) }
+                               waitFor.advancedsearch = false
                                return
                            }
                        }
@@ -2089,7 +2093,7 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
                                 let macAppsArray = try await PlatformAPIClient.shared.getMacApplications()
                                 if macAppsArray.isEmpty {
                                     WriteToLog.shared.message("[processItems] \(msgText) complete - \(nextObject)")
-                                    DispatchQueue.main.async { self.processItems(type: nextObject) }
+                                    waitFor.macApps = false
                                     return
                                 }
                                 for app in macAppsArray {
@@ -2102,7 +2106,7 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
                                 self.recursiveLookup(theServer: JamfProServer.source, base64Creds: self.jamfBase64Creds, theEndpoint: type, theData: macAppsArray, index: 0)
                             } catch {
                                 WriteToLog.shared.message("[processItems] Platform API error (macapplications): \(error)")
-                                DispatchQueue.main.async { self.processItems(type: nextObject) }
+                                waitFor.macApps = false
                                 return
                             }
                         }
@@ -4990,6 +4994,11 @@ class ViewController: NSViewController, ImportViewDelegate, SendingLoginInfoDele
             (result: (Int,String)) in
             let (statusCode, theResult) = result
 //            print("[xmlAction] token check")
+            guard theResult == "success" else {
+                WriteToLog.shared.message("[xmlAction] token unavailable (status \(statusCode)) for \(theEndpoint) — skipping")
+                completion((0, ""))
+                return
+            }
             if theResult == "success" {
                 let getRecordQ = OperationQueue()   //DispatchQueue(label: "com.jamf.getRecordQ", qos: DispatchQoS.background)
             
