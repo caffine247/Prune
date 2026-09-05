@@ -86,16 +86,16 @@ If you want to use Prune with all available object types, grant the following pr
 | Object Type | Required Privileges |
 |------------|---------------------|
 | **Classes** | Read Classes, Delete Classes |
-| **Computer Extension Attributes (EAs)** | Read Computer Extension Attributes, Delete Computer Extension Attributes, Read Patch Software Titles |
-| **Computer Groups** | Read Smart Computer Groups, Delete Smart Computer Groups, Read Static Computer Groups, Delete Static Computer Groups, Read Patch Policies, Read Patch Management Software Titles, Read Blueprints |
+| **Computer Extension Attributes (EAs)** | Read Computer Extension Attributes, Delete Computer Extension Attributes, Read Computer Advanced Searches, Read Patch Software Titles |
+| **Computer Groups** | Read Smart Computer Groups, Delete Smart Computer Groups, Read Static Computer Groups, Delete Static Computer Groups, Read Patch Policies, Read Computer Advanced Searches, Read Patch Management Software Titles, Read Blueprints |
 | **Computer Objects (General)** | Read Computer PreStage Enrollments |
 | **Computer Profiles** | Read macOS Configuration Profiles, Delete macOS Configuration Profiles |
 | **eBooks** | Read eBooks, Delete eBooks |
 | **Mac Apps** | Read Mac Applications, Delete Mac Applications |
 | **Mobile Device Apps** | Read Mobile Device Applications, Delete Mobile Device Applications |
 | **Mobile Device Configuration Profiles** | Read iOS Configuration Profiles, Delete iOS Configuration Profiles |
-| **Mobile Device Extension Attributes (EAs)** | Read Mobile Device Extension Attributes, Delete Mobile Device Extension Attributes |
-| **Mobile Device Groups** | Read Smart Mobile Device Groups, Delete Smart Mobile Device Groups, Read Static Mobile Device Groups, Delete Static Mobile Device Groups, Read Blueprints |
+| **Mobile Device Extension Attributes (EAs)** | Read Mobile Device Extension Attributes, Delete Mobile Device Extension Attributes, Read Mobile Device Advanced Searches |
+| **Mobile Device Groups** | Read Smart Mobile Device Groups, Delete Smart Mobile Device Groups, Read Static Mobile Device Groups, Delete Static Mobile Device Groups, Read Mobile Device Advanced Searches, Read Blueprints |
 | **Mobile Device Objects (General)** | Read Mobile Device PreStage Enrollments |
 | **Packages** | Read Packages, Delete Packages, Read Patch Management Software Titles |
 | **Policies** | Read Policies, Delete Policies |
@@ -197,7 +197,7 @@ Prune analyzes each object type by checking specific usage locations in your Jam
 | **Restricted Software** | Checked for scope of computer groups |
 | **Computer Extension Attributes** | Checked for scope of computer groups, advanced searches (including display tab), and enabled state |
 | **eBooks** | Checked for scope |
-| **Mobile Device Groups** | Checked for usage in blueprints (Platform API only), mobile device apps, mobile device configuration profiles, mobile device groups, eBooks, and classes |
+| **Mobile Device Groups** | Checked for usage in blueprints (Platform API only), mobile device apps, mobile device configuration profiles, mobile device groups, advanced searches, eBooks, and classes |
 | **Mobile Device Profiles** | Checked for scope |
 | **Classes** | Checked for scope (only looks for students/student groups/mobile device assignments) |
 | **Mobile Device Extension Attributes** | Checked for scope of mobile device groups and advanced searches |
